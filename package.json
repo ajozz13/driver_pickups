@@ -1,0 +1,30 @@
+{
+  "name": "pickups",
+  "version": "1.0.0",
+  "description": "This is the API for the pickups application",
+  "main": "app.js",
+  "scripts": {
+    "test": "jasmine",
+    "start": "./bin/start.sh"
+  },
+  "repository": {
+    "type": "git",
+    "url": "ssh://kanga.ibcinc.com/home/aochoa/web/src/webapps/node/pickups"
+  },
+  "keywords": [
+    "IBC",
+    "Pickups"
+  ],
+  "author": "Alberto Ochoa",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.16.3",
+    "mongoose": "^5.3.2",
+    "winston": "^3.1.0"
+  },
+  "devDependencies": {
+    "jasmine": "^3.2.0",
+    "jasmine-spec-reporter": "^4.2.1",
+    "request": "^2.88.0"
+  }
+}

@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.3.3/semantic.min.css" />
+  <title>IBC Web Airwaybill</title>
+  <!--<link rel="stylesheet" type="text/css" href="http://cdn2.hubspot.net/hubfs/518742/styles/printable.css"/>-->
+</head>
+<body>
+  <div class="ui container">
+
+    <img src="https://api.pactrak.com/images/ibc-large.gif" alt="IBC. Inc.">
+    <h1>IBC Pickups</h1>
+
+    <table class="ui celled striped table" id="pickup_table">
+      <thead><tr><th>Type</th><th>Name</th><th>Address</th><th>Cutoff</th><th>Department</th><th>Driver</th><th>Status</th></tr></thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.3.3/semantic.min.js"></script>
+<script>
+
+function createTableRow( dataArray ){
+  var row;
+  for( var i = 0; i < dataArray.length; i++ ){
+    switch (i) {
+      case 0:
+        row = $( "<tr/>", { id: dataArray[ i ] } );
+        break;
+      case 3:
+        var link = $( "<a/>", { "class" : "mapit" } ).text( dataArray[ i ] );
+        row.append( $( "<td/>" ).append( assignMapItAction( link ) ) );
+        break;
+      default:
+        row.append( $( "<td/>" ).text( dataArray[ i ] ) );
+    }
+  }
+  return row.append( $( "<td/>" ).append( createStatusDropdown() ) );
+}
+
+function createStatusDropdown(){
+  var dv = $( "<div/>", { "class": "ui selection dropdown" } );
+  dv.append( $( "<div/>", { "class": "text" } ) );
+  dv.append( $( "<i/>", { "class": "dropdown icon" } ) );
+  dv.dropdown({
+    values: [
+      { name: "New" , value: "new", selected: true },
+      { name: "In Progress" , value: "in progress" },
+      { name: "Completed" , value: "completed" },
+      { name: "Canceled" , value: "canceled" }
+    ],
+    onChange: function( value, text, $selectedItem ){
+      if( value === 'completed' || value === 'canceled' ){
+        dv.addClass( "disabled" );
+      }
+    }
+  });
+  return dv.dropdown( 'refresh' );
+}
+
+function assignMapItAction( l ){
+  var txt = l.text();
+  l.attr( { "href": "https://www.google.com/maps/place/"+encodeURI(txt), "target": "_blank"  } );
+  return l;
+}
+
+$(function (){
+
+  $( ".mapit" ).each( function(){
+    assignMapItAction( $(this) );
+  });
+
+  var arr1 = [ '1ae', 'pickup', 'Juan Martinez', '1780 W 49th St Hialeah 33012', '17:00', 'operations', 'Ricky' ];
+  $( "#pickup_table tbody" ).append( createTableRow( arr1 ) );
+  arr1 = [ '2cc', 'pickup', 'Jenn Osorio', '11100 NW 27th St Doral 33172', '17:30', 'operations', 'Ricky' ];
+  $( "#pickup_table tbody" ).append( createTableRow( arr1 ) );
+  arr1 = [ '34e', 'pickup', 'Mike Bello', '651 E 25th St Hialeah 33013', '14:00', 'operations', 'Omar' ];
+  $( "#pickup_table tbody" ).append( createTableRow( arr1 ) );
+  arr1 = [ '647e', 'pickup', 'Abner Simpson', '8401 NW 17th St Miami 33191', '16:30', 'operations', 'Omar' ];
+  $( "#pickup_table tbody" ).append( createTableRow( arr1 ) );
+  arr1 = [ '1324e', 'pickup', 'Josh Burk', '3275 NW 24th Street Rd 33142', '16:00', 'operations', 'Ricky' ];
+  $( "#pickup_table tbody" ).append( createTableRow( arr1 ) );
+  arr1 = [ '23441', 'pickup', 'Lil Wayne', '94 Lagorce Cir Miami Beach 33141', '18:00', 'operations', 'Ricky' ];
+  $( "#pickup_table tbody" ).append( createTableRow( arr1 ) );
+
+});
+</script>
+</body>
+</html>

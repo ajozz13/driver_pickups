@@ -5,6 +5,11 @@ module.exports = function( app ){
     path = require( 'path' ),
     config = require( '../../config' );
 
+  app.route( config.pickups_manager_resource )
+    .get( function( req, res ){
+      res.sendFile( path.join( __dirname + '../../../static/manager/index.html' ) )
+    });
+
   app.route( config.pickups_resource )
       .post( manager.create_pickup );
 

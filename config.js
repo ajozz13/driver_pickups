@@ -9,6 +9,7 @@ module.exports = {
   'application_port' : port,
   'application_url' : host_url,
   'pickups_resource' : '/v1/pickups',
+  'pickups_manager_resource' : '/v1/pickups_manager',
   'resources' : [ 'ibcpickups' ],
   'application_name' : 'IBCPickups',
   'environment': env

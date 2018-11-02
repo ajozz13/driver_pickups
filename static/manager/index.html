@@ -223,6 +223,8 @@ function loadTableDetails( target, data ){
     );
   }
 }
+//Reload page every minute
+setTimeout( window.location.reload.bind( location ), 60000 );
 
 $(function(){
 

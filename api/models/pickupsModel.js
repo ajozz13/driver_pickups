@@ -41,7 +41,7 @@ var PickupSchema = new Schema( {
   },
   status:{
     type: String,
-    enum: [ 'new', 'in progress', 'completed', 'cancelled' ]
+    enum: [ 'new', 'in_progress', 'completed', 'cancelled' ]
   }
 
 });

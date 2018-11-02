@@ -33,7 +33,7 @@ app.use( function( req, res, next ){
 
 //routes
 var routes = require( './api/routes/pickupsRoutes' );
-routes( app );
+routes( app, express );
 
 //handle bad requests
 app.use( function( req, res ){
@@ -45,4 +45,4 @@ logger.info( "Application: "+ config.application_name  );
 logger.info( "Environment: "+ config.environment );
 logger.info( "MongoDb: "+ mongodb );
 logger.info( "Host: "+ config.application_url );
-logger.info( "Services: "+ config.resources + " : " + config.pickups_resource );
+logger.info( "Services: "+ config.resources );

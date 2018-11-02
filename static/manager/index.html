@@ -3,8 +3,10 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width">
+  <link rel="shortcut icon" href="https://www.ibcinc.com/hubfs/IBC_Logo.jpg?t=1538162016987">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.3.3/semantic.min.css" />
-  <title>IBC Web Airwaybill</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui-calendar/0.0.8/calendar.min.css" />
+  <title>IBC Pickups</title>
   <!--<link rel="stylesheet" type="text/css" href="http://cdn2.hubspot.net/hubfs/518742/styles/printable.css"/>-->
 </head>
 <body>
@@ -13,15 +15,86 @@
     <img src="https://api.pactrak.com/images/ibc-large.gif" alt="IBC. Inc.">
     <h1>IBC Pickups</h1>
 
-    <table class="ui celled striped table" id="pickup_table">
-      <thead><tr><th>Type</th><th>Name</th><th>Address</th><th>Cutoff</th><th>Department</th><th>Driver</th><th>Status</th></tr></thead>
-      <tbody></tbody>
-    </table>
+<div class="ui grid">
+
+    <div class="sixteen wide column">
+      <div id="messagebox"></div>
+    </div>
+
+  <div class="sixteen wide column">
+    <button class="ui compact icon primary button right floated" id="new_pickup">
+      <i class="plus icon"></i>
+    </button>
   </div>
+
+  <div class="sixteen wide column">
+    <div class="ui segment">
+      <table class="ui selectable sortable celled table" id="pickup_table">
+        <thead><tr><th>Type</th><th>Station</th><th>Name</th><th>Address</th><th>Cutoff</th><th>Department</th><th>Driver</th><th>Status</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+</div>
+
+  <div class="ui modal" id="entry_modal">
+    <div class="header"></div>
+    <div class="content">
+      <div class="ui form" id="entry_form"></div>
+      <div class="ui divider"></div>
+    <div class="actions">
+      <div class="ui approve button">OK</div>
+      <div class="ui cancel button">Cancel</div>
+    </div>
+  </div>
+
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.3.3/semantic.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui-calendar/0.0.8/calendar.min.js"></script>
+<script src="https://semantic-ui.com/javascript/library/tablesort.js"></script>
+<script src="assets/js/bind.js"></script>
 <script>
+
+var pickupApp = {
+  host: "http://192.168.17.193:8088",
+  service: "v1/pickups/",
+  entry: BindObject( "entry" )
+};
+
+function getServiceURL( exs ){
+  var s = ( exs ) ? exs : "";
+  return pickupApp.host + "/" + pickupApp.service + s ;
+}
+
+function message_alert( header, message, is_error ){
+  var target = $( "#messagebox" );
+
+  if( !target.hasClass( "ui icon message" ) ){
+    target.addClass( "ui icon message" );
+  }
+  target.empty();
+  if( target.hasClass( 'hidden' ) ){
+    target.transition( 'scale' );
+  }
+  if( is_error ){
+    target.removeClass( "positive" ).addClass( "negative" );
+  }else{
+    target.removeClass( "negative" ).addClass( "positive" );
+  }
+  var icon_type =  is_error ? "hand point right": "inbox";
+  var icon = $( "<i/>", { "class": icon_type+" icon" } );
+  var content = $( "<div/>", { "class": "content" } );
+  content.append( $( "<div/>", { "class": "header" } ).html( header ) );
+  content.append( $( "<p/>" ).html( message ) );
+  target.append( icon ).append( content );
+
+  window.setTimeout( function(){
+      target.transition( 'fade' );
+  }, 6000 );
+
+}
 
 function createTableRow( dataArray ){
   var row;
@@ -30,35 +103,23 @@ function createTableRow( dataArray ){
       case 0:
         row = $( "<tr/>", { id: dataArray[ i ] } );
         break;
-      case 3:
+      case 4:
         var link = $( "<a/>", { "class" : "mapit" } ).text( dataArray[ i ] );
         row.append( $( "<td/>" ).append( assignMapItAction( link ) ) );
         break;
       default:
         row.append( $( "<td/>" ).text( dataArray[ i ] ) );
     }
+    var id = row.attr( "id" );
+    row.dblclick( function(){
+      /*console.log( row.children().length );
+      row.children( "td" ).each( function( i ){
+        console.log( "T:" + i + " " + $(this).text() );
+      });*/
+      setupUpdatePickup( "#entry_form", id );
+    });
   }
-  return row.append( $( "<td/>" ).append( createStatusDropdown() ) );
-}
-
-function createStatusDropdown(){
-  var dv = $( "<div/>", { "class": "ui selection dropdown" } );
-  dv.append( $( "<div/>", { "class": "text" } ) );
-  dv.append( $( "<i/>", { "class": "dropdown icon" } ) );
-  dv.dropdown({
-    values: [
-      { name: "New" , value: "new", selected: true },
-      { name: "In Progress" , value: "in progress" },
-      { name: "Completed" , value: "completed" },
-      { name: "Canceled" , value: "canceled" }
-    ],
-    onChange: function( value, text, $selectedItem ){
-      if( value === 'completed' || value === 'canceled' ){
-        dv.addClass( "disabled" );
-      }
-    }
-  });
-  return dv.dropdown( 'refresh' );
+  return row;
 }
 
 function assignMapItAction( l ){
@@ -67,24 +128,171 @@ function assignMapItAction( l ){
   return l;
 }
 
-$(function (){
+function arrayToValuesJSON( array, selection ){
+  var ret = [];
+  array.forEach( function( item ) {
+    obj = {};
+    obj.name = pickupApp.entry.toTitleCase( item );
+    obj.value = item;
+    if( item === selection ){
+      obj.selected = true;
+    }
+    ret.push( obj );
+  });
+  return ret;
+}
+
+function toFormField( label, input ){
+  var field = $( "<div/>", { "class": "field" } );
+  var label = $( "<label/>" ).text( label );
+  return field.append( label ).append( input );
+}
+
+function setupUpdatePickup( target, entry_id ){
+  $( target ).empty();
+
+  $( target ).append( toFormField( "Entry ID", $( "<span/>" ).text( entry_id ) ) );
+
+  var station = $("#"+entry_id+ " td:nth-child(2)" ).text();
+  $( target ).append( toFormField( "Station", $( "<span/>" ).text( station ) ) );
+
+  var input = $( "<select/>" ).append( $("<option/>", { value: "completed" } ).text( "Completed" ) ).append( $( "<option/>", { value: "cancelled" } ).text( "Canceled" ) );
+  $( target ).append( toFormField( "Status", input ) );
+
+  $( "#entry_modal" ).modal({
+    autofocus: false,
+    onShow: function(){
+      $( this ).find( ".header" ).html( "Update Pickup Entry" );
+    },
+    onDeny: function(){},
+    onApprove: function(){
+      var selected = $( "#entry_form select" ).val();
+      var parent = $( "#pickup_table" ).closest( ".column" );
+      parent.addClass( "ui loader" );
+      $.post( getServiceURL( station + "/" + entry_id ), { "status": selected }, function( data ){
+        console.log( data );
+        $( "#"+entry_id +" td" ).last().text( selected );
+        $( "#"+entry_id ).attr( "style", "background-color:#ffc2b3;" ).transition( 'glow', function(){
+          window.setTimeout( function(){
+            $( "#"+entry_id ).remove();
+            parent.removeClass( "ui loader" );
+          }, 3500 );
+        });
+        message_alert( "Update successful.", data.response_message + " Row will be removed.", data.is_error );
+      }).fail(function( xhr, textStatus, errorThrown ) {
+        handleError( xhr, textStatus, errorThrown );
+      }).always(function() {
+        console.log( "update finished" );
+        return true;
+      }, 'json' );
+    }
+  }).modal( 'show' );
+}
+
+function handleError( xhr, textStatus, errorThrown ){
+    console.log( xhr );
+    var resp = xhr.responseJSON;
+    var str = resp.response_message + " " + resp.request_url + " ["+ resp.response_code +"]";
+    if( resp.error ){
+      str += "<br />"+ resp.error.message;
+    }
+    message_alert( errorThrown + " : " + textStatus, str, resp.is_error );
+}
+
+function loadTable(){
+  var parent = $( "#pickup_table" ).closest( ".column" );
+  parent.addClass( "ui loader" );
+  $.get( getServiceURL(), function( data ) {
+    console.log( data );
+    loadTableDetails( "#pickup_table tbody", data.entry );
+    message_alert( "Success", data.response_message + ". Table has been loaded.", data.is_error );
+  }).fail(function( xhr, textStatus, errorThrown ) {
+    handleError( xhr, textStatus, errorThrown );
+  }).always(function() {
+    console.log( "load table finished" );
+    parent.removeClass( "ui loader" );
+  }, 'json');
+}
+
+function loadTableDetails( target, data ){
+  for( var i=0; i<data.length; i++ ) {
+    var entry = data[ i ];
+    $( target ).append(
+      createTableRow( [ entry._id, entry.request_type, entry.station,
+          entry.pickup_name, entry.pickup_address, entry.cutoff_time, entry.department, entry.driver, entry.status ] )
+    );
+  }
+}
+
+$(function(){
+
+  //Load all open entries in the pickup_table
+
+  loadTable();
+  $( "#pickup_table" ).tablesort();
+  //manager selection
+  var calendar_obj = { ampm: false, type: 'time',
+    onChange: function (date, text, mode){
+      pickupApp.entry.set( "cutoff_time", text );
+    }
+  };
+
+  $( "#new_pickup" ).click( function(){
+    pickupApp.entry.destroy();
+    pickupApp.entry.addDropdownInput( "station", "MIA",
+      arrayToValuesJSON( [ "MIA", "ORD", "JFK", "LAX" ], "MIA" ) );
+    pickupApp.entry.addDropdownInput( "request_type", "pickup",
+      arrayToValuesJSON( [ "pickup", "delivery" ], "pickup" ) );
+    pickupApp.entry.set( "pickup_name", "" );
+    pickupApp.entry.set( "pickup_address", "" );
+    pickupApp.entry.addCalendarInput( "cutoff_time", "", "time" );
+    pickupApp.entry.set( "department", "" );
+    pickupApp.entry.set( "driver", "" );
+    pickupApp.entry.addDropdownInput( "status", "new",
+      arrayToValuesJSON( [ "new", "in_progress", "completed", "canceled" ], "new" ) );
+
+    pickupApp.entry.toHTML( "#entry_form" );
+
+    $( "#entry_modal" ).modal({
+      autofocus: false,
+      onShow: function(){
+        $( this ).find( ".header" ).html( "Create a new Pickup Entry" );
+        $( '#cutoff_time' ).calendar( calendar_obj );
+        /*$( '#status' ).dropdown( 'setting', 'onChange', function( v, t, $s ){
+          if( v === 'completed' || v === 'canceled' ){
+            $( '#status' ).addClass( "disabled" );
+          }
+        });*/
+      },
+      onDeny: function(){},
+      onApprove: function(){
+        pickupApp.entry.set( "status", "new" );
+        console.log( getServiceURL() );
+        console.log( pickupApp.entry.toString() );
+
+        $.post( getServiceURL(), pickupApp.entry.attributes, function( data ) {
+          console.log( data );
+          pickupApp.entry.set( "_id", data.entry._id );
+          $( "#pickup_table tbody" ).append(
+            createTableRow( pickupApp.entry.toAttributeArray( [ "_id", "request_type", "station",
+                "pickup_name", "pickup_address", "cutoff_time", "department", "driver", "status" ] ) )
+          );
+          message_alert( "Success", data.response_message, data.is_error );
+        }).fail(function( xhr, textStatus, errorThrown ) {
+          handleError( xhr, textStatus, errorThrown );
+        }).always(function() {
+          console.log( "add new finished" );
+        }, 'json');
+
+      }
+    }).modal( 'show' );
+  });
+
+  //end manager section
 
   $( ".mapit" ).each( function(){
     assignMapItAction( $(this) );
   });
-
-  var arr1 = [ '1ae', 'pickup', 'Juan Martinez', '1780 W 49th St Hialeah 33012', '17:00', 'operations', 'Ricky' ];
-  $( "#pickup_table tbody" ).append( createTableRow( arr1 ) );
-  arr1 = [ '2cc', 'pickup', 'Jenn Osorio', '11100 NW 27th St Doral 33172', '17:30', 'operations', 'Ricky' ];
-  $( "#pickup_table tbody" ).append( createTableRow( arr1 ) );
-  arr1 = [ '34e', 'pickup', 'Mike Bello', '651 E 25th St Hialeah 33013', '14:00', 'operations', 'Omar' ];
-  $( "#pickup_table tbody" ).append( createTableRow( arr1 ) );
-  arr1 = [ '647e', 'pickup', 'Abner Simpson', '8401 NW 17th St Miami 33191', '16:30', 'operations', 'Omar' ];
-  $( "#pickup_table tbody" ).append( createTableRow( arr1 ) );
-  arr1 = [ '1324e', 'pickup', 'Josh Burk', '3275 NW 24th Street Rd 33142', '16:00', 'operations', 'Ricky' ];
-  $( "#pickup_table tbody" ).append( createTableRow( arr1 ) );
-  arr1 = [ '23441', 'pickup', 'Lil Wayne', '94 Lagorce Cir Miami Beach 33141', '18:00', 'operations', 'Ricky' ];
-  $( "#pickup_table tbody" ).append( createTableRow( arr1 ) );
 
 });
 </script>

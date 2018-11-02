@@ -12,8 +12,14 @@ exports.create_pickup = function( req, res ){
   });
 };
 
-//GET config.pickups_resource/:station
+//GET config.pickups_resource/
 exports.list_all_pickups = function( req, res ){
+  Pickups.find( { status: { $in: [ "new", "in_progress" ] } }, function( err, pickups ){
+      handleAnswer( res, req.originalUrl, err, pickups, 200, 'OK', 'Pickup list is empty' );
+  });
+};
+//GET config.pickups_resource/:station
+exports.list_pickups_by_station = function( req, res ){
   Pickups.find( { station: req.params.station }, function( err, pickups ){
       handleAnswer( res, req.originalUrl, err, pickups, 200, 'OK', 'Pickup list is empty' );
   });

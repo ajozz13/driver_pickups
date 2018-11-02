@@ -193,7 +193,7 @@ function handleError( xhr, textStatus, errorThrown ){
     console.log( xhr );
     var resp = xhr.responseJSON;
     var str = resp.response_message + " " + resp.request_url + " ["+ resp.response_code +"]";
-    if( resp.error ){
+    if( resp.error.message ){
       str += "<br />"+ resp.error.message;
     }
     message_alert( errorThrown + " : " + textStatus, str, resp.is_error );

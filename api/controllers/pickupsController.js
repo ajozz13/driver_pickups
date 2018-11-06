@@ -20,7 +20,7 @@ exports.list_all_pickups = function( req, res ){
 };
 //GET config.pickups_resource/:station
 exports.list_pickups_by_station = function( req, res ){
-  Pickups.find( { station: req.params.station }, function( err, pickups ){
+  Pickups.find( { station: req.params.station, status: { $in: [ "new", "in_progress" ] } }, function( err, pickups ){
       handleAnswer( res, req.originalUrl, err, pickups, 200, 'OK', 'Pickup list is empty' );
   });
 };

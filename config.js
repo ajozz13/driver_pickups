@@ -10,8 +10,7 @@ module.exports = {
   'application_url' : host_url,
   'pickups_resource' : '/v1/pickups',
   'pickups_manager_resource' : '/v1/pickups_manager',
-  'station_pickups' : '/v1/site_pickups',
-  'resources' : [ '/v1/pickups', '/v1/pickups_manager', '/v1/site_pickups' ],
+  'resources' : [ '/v1/pickups', '/v1/pickups_manager' ],
   'application_name' : 'IBCPickups',
   'environment': env
 }

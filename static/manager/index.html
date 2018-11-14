@@ -235,6 +235,12 @@ $(function(){
   $( "#pickup_table" ).tablesort();
   //manager selection
   var calendar_obj = { ampm: false, type: 'time',
+    formatter: {
+      time: function (date, settings, forCalendar) {
+        function pad(n){ return n<10 ? '0'+n : n };
+        return pad(date.getHours())+":"+pad(date.getMinutes());
+      }
+    },
     onChange: function (date, text, mode){
       pickupApp.entry.set( "cutoff_time", text );
     }
